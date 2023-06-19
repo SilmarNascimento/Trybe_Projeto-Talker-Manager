@@ -21,6 +21,20 @@ app.get('/talker', async (_request, response, _next) => {
   return response.status(HTTP_OK_STATUS).json(data);
 });
 
+app.get('/talker/search', authorization, async (request, response) => {
+  const { q: searchTerm } = request.query;
+  console.log("valor da query: ", searchTerm);
+  const speakers = await readFile();
+  if (!searchTerm) {
+  return response.status(200).json(speakers);
+  }
+  const speakerFound = speakers.filter((speaker) => speaker.name.includes(searchTerm));
+  if (!speakerFound) {
+    return response.status(200).json();
+  }
+  return response.status(200).json(speakerFound);
+});
+
 app.get('/talker/:id', async (request, response, _next) => {
   const { id } = request.params;
   const data = await readFile();
@@ -132,8 +146,7 @@ app.delete('/talker/:id', authorization, async (resquest, response) => {
   }, []);
   await writeFile(updatedSpeakers);
   return response.status(204).json();
-})
-
+});
 
 app.listen(PORT, () => {
   console.log('Online');
