@@ -33,32 +33,6 @@ app.get('/talker/:id', async (request, response, _next) => {
   return response.status(HTTP_OK_STATUS).json(foundPerson);
 });
 
-app.post('/talker',
-  authorization,
-  namevalidation,
-  ageValidation,
-  talkValidation,
-  watchedAtValidation,
-  rateValidation,
-  async (request, response,_next) => {
-  const speakers = await readFile();
-  speakers.sort((a, b) => a.id - b.id);
-  const nextId = speakers[speakers.length - 1].id + 1;
-  console.log(nextId);
-
-  const lastSpeaker = {
-    id: nextId,
-    ...request.body,
-  };
-  const newSpeakers = [
-    ...speakers,
-    lastSpeaker
-  ];
-  await writeFile(newSpeakers);
-
-  return response.status(201).json(lastSpeaker);
-});
-
 app.post('/login', async (request, response, _next) => {
   const { email, password } = request.body;
   const regex = /\S+@\S+\.\S+/;
@@ -85,6 +59,32 @@ app.post('/login', async (request, response, _next) => {
   return response.status(HTTP_OK_STATUS).json({ token });
 });
 
+app.post('/talker',
+  authorization,
+  namevalidation,
+  ageValidation,
+  talkValidation,
+  watchedAtValidation,
+  rateValidation,
+  async (request, response,_next) => {
+  const speakers = await readFile();
+  speakers.sort((a, b) => a.id - b.id);
+  const nextId = speakers[speakers.length - 1].id + 1;
+  console.log(nextId);
+
+  const lastSpeaker = {
+    id: nextId,
+    ...request.body,
+  };
+  const newSpeakers = [
+    ...speakers,
+    lastSpeaker
+  ];
+  await writeFile(newSpeakers);
+
+  return response.status(201).json(lastSpeaker);
+});
+
 app.put('/talker/:id',
   authorization,
   namevalidation,
@@ -93,27 +93,47 @@ app.put('/talker/:id',
   watchedAtValidation,
   rateValidation,
   async (request, response,_next) => {
-    const { id } = request.params;
-    const speakers = await readFile();
-    const speakerFound = speakers.find((speaker) => speaker.id === Number(id));
-    if (!speakerFound) {
-      return response.status(404).json({
-        message: 'Pessoa palestrante não encontrada',
-      });
-    }
-    const updatedData = {
-      id: Number(id),
-      ...request.body,
+  const { id } = request.params;
+  const speakers = await readFile();
+  const speakerFound = speakers.find((speaker) => speaker.id === Number(id));
+  if (!speakerFound) {
+    return response.status(404).json({
+      message: 'Pessoa palestrante não encontrada',
+    });
+  }
+  const updatedData = {
+    id: Number(id),
+    ...request.body,
+  };
+  const updatedSpeakers = speakers.reduce((acc, crr) => {
+    if (crr.id === Number(id)) {
+      return [...acc, updatedData];
     };
-    const updatedSpeakers = speakers.reduce((acc, crr) => {
-      if (crr.id === Number(id)) {
-        return [...acc, updatedData];
-      };
-      return [...acc, crr ];
-    }, []);
-    await writeFile(updatedSpeakers);
-    return response.status(200).json(updatedData);
-  })
+    return [...acc, crr ];
+  }, []);
+  await writeFile(updatedSpeakers);
+  return response.status(200).json(updatedData);
+});
+
+app.delete('/talker/:id', authorization, async (resquest, response) => {
+  const { id } = resquest.params;
+  const speakers = await readFile();
+  const speakerFound = speakers.find((speaker) => speaker.id === Number(id));
+  if (!speakerFound) {
+    return response.status(404).json({
+      message: 'Pessoa palestrante não encontrada',
+    });
+  }
+  const updatedSpeakers = speakers.reduce((acc, crr) => {
+    if (crr.id === Number(id)) {
+      return [...acc];
+    };
+    return [...acc, crr ];
+  }, []);
+  await writeFile(updatedSpeakers);
+  return response.status(204).json();
+})
+
 
 app.listen(PORT, () => {
   console.log('Online');
