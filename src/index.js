@@ -22,8 +22,7 @@ app.get('/talker', async (_request, response, _next) => {
 });
 
 app.get('/talker/search', authorization, async (request, response) => {
-  const { q: searchTerm } = request.query;
-  console.log("valor da query: ", searchTerm);
+  const { q: searchTerm, rate, date } = request.query;
   const speakers = await readFile();
   if (!searchTerm) {
   return response.status(200).json(speakers);
