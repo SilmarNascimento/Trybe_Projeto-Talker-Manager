@@ -1,5 +1,6 @@
 const express = require('express');
 const { findAll } = require('./db/talkerDB');
+const { readFile } = require('./utils/fs');
 
 const app = express();
 app.use(express.json());
@@ -13,10 +14,9 @@ app.get('/', (_request, response) => {
 });
 
 app.get('/talker', async (request, response, next) => {
-  console.log('cheguei aqui');
-  const data = await findAll();
+  const data = await readFile();
   console.log(data);
-  return response.status(200).json(data);
+  return response.status(HTTP_OK_STATUS).json(data);
 })
 
 app.listen(PORT, () => {
