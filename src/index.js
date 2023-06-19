@@ -1,5 +1,6 @@
 const express = require('express');
 const { readFile } = require('./utils/fs');
+const generateToken = require('./utils/generateToken');
 
 const app = express();
 app.use(express.json());
@@ -29,6 +30,17 @@ app.get('/talker/:id', async (request, response, _next) => {
   }
   return response.status(HTTP_OK_STATUS).json(foundPerson);
 });
+
+app.post('/login', async (request, response, _next) => {
+  const { email, password } = request.body;
+  const token = generateToken();
+  console.log(email, password);
+  console.log(token);
+  if (email && password) {
+    return response.status(HTTP_OK_STATUS).json({ token });
+  };
+  return response.status(400).json('algo de errado n está certo')
+})
 
 app.listen(PORT, () => {
   console.log('Online');

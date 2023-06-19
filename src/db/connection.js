@@ -8,7 +8,7 @@ const connection = mysql.createPool({
   database: 'TalkerDB',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
 });
 
 module.exports = connection;
