@@ -33,13 +33,27 @@ app.get('/talker/:id', async (request, response, _next) => {
 
 app.post('/login', async (request, response, _next) => {
   const { email, password } = request.body;
-  const token = generateToken();
-  console.log(email, password);
-  console.log(token);
-  if (email && password) {
-    return response.status(HTTP_OK_STATUS).json({ token });
+  const regex = /\S+@\S+\.\S+/;
+  if (!email) {
+    return response.status(400).json({
+      message: 'O campo \"email\" é obrigatório',
+    });
+  } else if (!regex.test(email)) {
+    return response.status(400).json({
+      message: 'O \"email\" deve ter o formato \"email@email.com\"',
+    });
+  }
+  if (!password) {
+    return response.status(400).json({
+      message: 'O campo \"password\" é obrigatório',
+    });
+  } else if(password.length < 6) {
+    return response.status(400).json({
+      message: 'O \"password\" deve ter pelo menos 6 caracteres',
+    });
   };
-  return response.status(400).json('algo de errado n está certo')
+  const token = generateToken();
+  return response.status(HTTP_OK_STATUS).json({ token });
 })
 
 app.listen(PORT, () => {
