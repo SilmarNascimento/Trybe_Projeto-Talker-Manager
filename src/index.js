@@ -1,5 +1,4 @@
 const express = require('express');
-const { findAll } = require('./db/talkerDB');
 const { readFile } = require('./utils/fs');
 
 const app = express();
@@ -13,11 +12,23 @@ app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
 });
 
-app.get('/talker', async (request, response, next) => {
+app.get('/talker', async (_request, response, _next) => {
   const data = await readFile();
-  console.log(data);
+  // if (data.length === 0) return response.status(HTTP_OK_STATUS).json([]);
   return response.status(HTTP_OK_STATUS).json(data);
-})
+});
+
+app.get('/talker/:id', async (request, response, _next) => {
+  const { id } = request.params;
+  const data = await readFile();
+  const foundPerson = data.find((person) => person.id === Number(id));
+  if (!foundPerson) {
+    return response.status(404).json({
+      message: 'Pessoa palestrante não encontrada',
+    });
+  }
+  return response.status(HTTP_OK_STATUS).json(foundPerson);
+});
 
 app.listen(PORT, () => {
   console.log('Online');
