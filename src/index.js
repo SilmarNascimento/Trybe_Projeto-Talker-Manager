@@ -83,7 +83,37 @@ app.post('/login', async (request, response, _next) => {
   const token = generateToken();
   request.headers.authorization = token;
   return response.status(HTTP_OK_STATUS).json({ token });
-})
+});
+
+app.put('/talker/:id',
+  authorization,
+  namevalidation,
+  ageValidation,
+  talkValidation,
+  watchedAtValidation,
+  rateValidation,
+  async (request, response,_next) => {
+    const { id } = request.params;
+    const speakers = await readFile();
+    const speakerFound = speakers.find((speaker) => speaker.id === Number(id));
+    if (!speakerFound) {
+      return response.status(404).json({
+        message: 'Pessoa palestrante não encontrada',
+      });
+    }
+    const updatedData = {
+      id: Number(id),
+      ...request.body,
+    };
+    const updatedSpeakers = speakers.reduce((acc, crr) => {
+      if (crr.id === Number(id)) {
+        return [...acc, updatedData];
+      };
+      return [...acc, crr ];
+    }, []);
+    await writeFile(updatedSpeakers);
+    return response.status(200).json(updatedData);
+  })
 
 app.listen(PORT, () => {
   console.log('Online');
