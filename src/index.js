@@ -14,6 +14,7 @@ const {
   rateSearchValidation,
   dateSearchValidation,
 } = require('./middlewares/talkSearchValidation');
+const { aditionalFIlters } = require('./utils/searchFilters');
 
 const app = express();
 app.use(express.json());
@@ -31,23 +32,6 @@ app.get('/talker', async (_request, response, _next) => {
   // if (data.length === 0) return response.status(HTTP_OK_STATUS).json([]);
   return response.status(HTTP_OK_STATUS).json(data);
 });
-
-const rateFilter = (array, filter) => array.filter(({ talk }) => talk.rate === Number(filter));
-
-const dateFilter = (array, filter) => array.filter(({ talk }) => talk.watchedAt === filter);
-
-const aditionalFIlters = (propArray, lastFilter) => {
-  let response = [...lastFilter];
-  propArray.forEach((prop, index) => {
-    if (propArray[0] && index === 0) {
-      response = rateFilter(response, prop);
-    }
-    if (propArray[1] && index === 1) {
-      response = dateFilter(response, prop);
-    }
-  });
-  return response;
-};
 
 app.get('/talker/search',
   authorization,
