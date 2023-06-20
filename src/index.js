@@ -16,6 +16,8 @@ const {
   dateSearchValidation,
 } = require('./middlewares/talkSearchValidation');
 const { aditionalFIlters } = require('./utils/searchFilters');
+const connection = require('./db/connection');
+const { findAll } = require('./db/talkerDB');
 
 const app = express();
 app.use(express.json());
@@ -29,8 +31,28 @@ app.get('/', (_request, response) => {
 
 app.get('/talker', async (_request, response, _next) => {
   const data = await readFile();
-  // if (data.length === 0) return response.status(HTTP_OK_STATUS).json([]);
   return response.status(HTTP_OK_STATUS).json(data);
+});
+
+app.get('/talker/db', async (_request, response, _next) => {
+  const [data] = await findAll();
+  if (data.length === 0) {
+    return response.status(HTTP_OK_STATUS).json([]);
+  }
+  const newSpeakers = data.map((info) => {
+    const {
+      id,
+      name,
+      age,
+      talk_watched_at: watchedAt,
+      talk_rate: rate,
+    } = info;
+    const constructedSpeaker = {
+      id, name, age, talk: { watchedAt, rate },
+    };
+    return constructedSpeaker;
+  });
+  return response.status(HTTP_OK_STATUS).json(newSpeakers);
 });
 
 app.get('/talker/search',
@@ -164,6 +186,9 @@ app.delete('/talker/:id', authorization, async (resquest, response, _next) => {
   return response.status(204).json();
 });
 
-app.listen(PORT, () => {
-  console.log('Online');
+app.listen(PORT, async () => {
+  const [result] = await connection.execute('SELECT 1');
+  if (result) {
+    console.log('MySQL connection OK');
+  }
 });

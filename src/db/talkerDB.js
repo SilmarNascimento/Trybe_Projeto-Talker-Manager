@@ -1,6 +1,6 @@
 const conn = require('./connection');
 
-const findAll = () => conn.execute('SELECT * FROM talker_manager_db.talkers');
+const findAll = () => conn.execute('SELECT * FROM TalkerDB.talkers');
 
 const findById = (id) => conn.execute(
   `SELECT * FROM talker_manager_db.talkers
