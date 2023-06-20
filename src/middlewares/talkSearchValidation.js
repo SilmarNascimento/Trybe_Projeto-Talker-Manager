@@ -13,36 +13,33 @@ const searchTermValidation = async (request, response, next) => {
   next();
 };
 
-const rateValidation = async (request, response, next) => {
-  const { rate } = request.query;
-  const speakers = await readFile();
-  if (!Number.isInteger(rate) || rate <= 0 || rate > 5) {
-  return response.status(400).json({
-    message: 'O campo "rate" deve ser um número inteiro entre 1 e 5',
-  });
-  }
-  const speakerFound = speakers.filter(({ talk }) => talk.rate === Number(rate));
-  if (!speakerFound) {
-    return response.status(200).json();
+const rateSearchValidation = async (request, response, next) => {
+  if (request.query.rate) {
+    const rate = Number(request.query.rate);
+    if (!Number.isInteger(rate) || rate <= 0 || rate > 5) {
+      return response.status(400).json({
+        message: 'O campo "rate" deve ser um número inteiro entre 1 e 5',
+      });
+    }
   }
   next();
 };
 
-const dateValidation = async (request, response, next) => {
-  const { rate } = request.query;
-  const speakers = await readFile();
-  if (!rate) {
-  return response.status(200).json(speakers);
-  }
-  const speakerFound = speakers.filter(({ talk }) => talk.rate === Number(rate));
-  if (!speakerFound) {
-    return response.status(200).json();
+const dateSearchValidation = async (request, response, next) => {
+  const { date } = request.query;
+  if (date) {
+    const regexData = /^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$/i;
+    if (!regexData.test(date)) {
+      return response.status(400).json({
+        message: 'O parâmetro "date" deve ter o formato "dd/mm/aaaa"',
+      });
+    }
   }
   next();
 };
 
 module.exports = {
   searchTermValidation,
-  rateValidation,
-  dateValidation,
+  rateSearchValidation,
+  dateSearchValidation,
 };

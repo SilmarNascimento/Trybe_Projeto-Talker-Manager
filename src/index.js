@@ -2,7 +2,18 @@ const express = require('express');
 const { readFile, writeFile } = require('./utils/fs');
 const generateToken = require('./utils/generateToken');
 const authorization = require('./middlewares/authorization');
-const { namevalidation, ageValidation, talkValidation, rateValidation, watchedAtValidation } = require('./middlewares/talkerValidation');
+const {
+  namevalidation,
+  ageValidation,
+  talkValidation,
+  rateValidation,
+  watchedAtValidation,
+} = require('./middlewares/talkerValidation');
+const { emailValidation, passwordValidation } = require('./middlewares/loginValidation');
+const {
+  rateSearchValidation,
+  dateSearchValidation,
+} = require('./middlewares/talkSearchValidation');
 
 const app = express();
 app.use(express.json());
@@ -21,17 +32,37 @@ app.get('/talker', async (_request, response, _next) => {
   return response.status(HTTP_OK_STATUS).json(data);
 });
 
-app.get('/talker/search', authorization, async (request, response) => {
+const rateFilter = (array, filter) => array.filter(({ talk }) => talk.rate === Number(filter));
+
+const dateFilter = (array, filter) => array.filter(({ talk }) => talk.watchedAt === filter);
+
+const aditionalFIlters = (propArray, lastFilter) => {
+  let response = [...lastFilter];
+  propArray.forEach((prop, index) => {
+    if (propArray[0] && index === 0) {
+      response = rateFilter(response, prop);
+    }
+    if (propArray[1] && index === 1) {
+      response = dateFilter(response, prop);
+    }
+  });
+  return response;
+};
+
+app.get('/talker/search',
+  authorization,
+  rateSearchValidation,
+  dateSearchValidation,
+  async (request, response) => {
   const { q: searchTerm, rate, date } = request.query;
+  const searchProperties = [rate, date];
   const speakers = await readFile();
-  if (!searchTerm) {
-  return response.status(200).json(speakers);
+  let lastFilter = [...speakers];
+  if (searchTerm) {
+    lastFilter = speakers.filter((speaker) => speaker.name.includes(searchTerm));
   }
-  const speakerFound = speakers.filter((speaker) => speaker.name.includes(searchTerm));
-  if (!speakerFound) {
-    return response.status(200).json();
-  }
-  return response.status(200).json(speakerFound);
+  lastFilter = aditionalFIlters(searchProperties, lastFilter);
+  return response.status(200).json(lastFilter);
 });
 
 app.get('/talker/:id', async (request, response, _next) => {
@@ -46,27 +77,10 @@ app.get('/talker/:id', async (request, response, _next) => {
   return response.status(HTTP_OK_STATUS).json(foundPerson);
 });
 
-app.post('/login', async (request, response, _next) => {
-  const { email, password } = request.body;
-  const regex = /\S+@\S+\.\S+/;
-  if (!email) {
-    return response.status(400).json({
-      message: 'O campo \"email\" é obrigatório',
-    });
-  } else if (!regex.test(email)) {
-    return response.status(400).json({
-      message: 'O \"email\" deve ter o formato \"email@email.com\"',
-    });
-  }
-  if (!password) {
-    return response.status(400).json({
-      message: 'O campo \"password\" é obrigatório',
-    });
-  } else if(password.length < 6) {
-    return response.status(400).json({
-      message: 'O \"password\" deve ter pelo menos 6 caracteres',
-    });
-  };
+app.post('/login',
+  emailValidation,
+  passwordValidation,
+  async (request, response, _next) => {
   const token = generateToken();
   request.headers.authorization = token;
   return response.status(HTTP_OK_STATUS).json({ token });
@@ -79,11 +93,10 @@ app.post('/talker',
   talkValidation,
   watchedAtValidation,
   rateValidation,
-  async (request, response,_next) => {
+  async (request, response, _next) => {
   const speakers = await readFile();
   speakers.sort((a, b) => a.id - b.id);
   const nextId = speakers[speakers.length - 1].id + 1;
-  console.log(nextId);
 
   const lastSpeaker = {
     id: nextId,
@@ -91,7 +104,7 @@ app.post('/talker',
   };
   const newSpeakers = [
     ...speakers,
-    lastSpeaker
+    lastSpeaker,
   ];
   await writeFile(newSpeakers);
 
@@ -105,7 +118,7 @@ app.put('/talker/:id',
   talkValidation,
   watchedAtValidation,
   rateValidation,
-  async (request, response,_next) => {
+  async (request, response, _next) => {
   const { id } = request.params;
   const speakers = await readFile();
   const speakerFound = speakers.find((speaker) => speaker.id === Number(id));
@@ -114,15 +127,12 @@ app.put('/talker/:id',
       message: 'Pessoa palestrante não encontrada',
     });
   }
-  const updatedData = {
-    id: Number(id),
-    ...request.body,
-  };
+  const updatedData = { id: Number(id), ...request.body };
   const updatedSpeakers = speakers.reduce((acc, crr) => {
     if (crr.id === Number(id)) {
       return [...acc, updatedData];
-    };
-    return [...acc, crr ];
+    }
+    return [...acc, crr];
   }, []);
   await writeFile(updatedSpeakers);
   return response.status(200).json(updatedData);
@@ -140,8 +150,8 @@ app.delete('/talker/:id', authorization, async (resquest, response) => {
   const updatedSpeakers = speakers.reduce((acc, crr) => {
     if (crr.id === Number(id)) {
       return [...acc];
-    };
-    return [...acc, crr ];
+    }
+    return [...acc, crr];
   }, []);
   await writeFile(updatedSpeakers);
   return response.status(204).json();
