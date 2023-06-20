@@ -8,6 +8,7 @@ const {
   talkValidation,
   rateValidation,
   watchedAtValidation,
+  ratePatchValidation,
 } = require('./middlewares/talkerValidation');
 const { emailValidation, passwordValidation } = require('./middlewares/loginValidation');
 const {
@@ -22,7 +23,6 @@ app.use(express.json());
 const HTTP_OK_STATUS = 200;
 const PORT = process.env.PORT || '3001';
 
-// não remova esse endpoint, e para o avaliador funcionar
 app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
 });
@@ -47,6 +47,29 @@ app.get('/talker/search',
   }
   lastFilter = aditionalFIlters(searchProperties, lastFilter);
   return response.status(200).json(lastFilter);
+});
+
+app.patch('/talker/rate/:id',
+  authorization,
+  ratePatchValidation,
+  async (request, response, _next) => {
+  const { id } = request.params;
+  const { rate } = request.body;
+  const speakers = await readFile();
+  const foundPerson = speakers.find((speaker) => speaker.id === Number(id));
+  if (!foundPerson) {
+    return response.status(404).json({ message: 'Person not found' });
+  }
+  const updatedSpeaker = { ...foundPerson, talk: { ...foundPerson.talk, rate },
+  };
+  const updatedList = speakers.reduce((acc, crr) => {
+    if (crr.id === Number(id)) {
+      return [...acc, updatedSpeaker];
+    }
+    return [...acc, crr];
+  }, []);
+  await writeFile(updatedList);
+  return response.status(204).json();
 });
 
 app.get('/talker/:id', async (request, response, _next) => {
@@ -122,7 +145,7 @@ app.put('/talker/:id',
   return response.status(200).json(updatedData);
 });
 
-app.delete('/talker/:id', authorization, async (resquest, response) => {
+app.delete('/talker/:id', authorization, async (resquest, response, _next) => {
   const { id } = resquest.params;
   const speakers = await readFile();
   const speakerFound = speakers.find((speaker) => speaker.id === Number(id));

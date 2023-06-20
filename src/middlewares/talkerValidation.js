@@ -59,6 +59,21 @@ const rateValidation = (request, response, next) => {
   next();
 };
 
+const ratePatchValidation = (request, response, next) => {
+  const { rate } = request.body;
+  if (rate === undefined) {
+    return response.status(400).json({
+      message: 'O campo "rate" é obrigatório',
+    });
+  }
+  if (!Number.isInteger(rate) || rate <= 0 || rate > 5) {
+    return response.status(400).json({
+      message: 'O campo "rate" deve ser um número inteiro entre 1 e 5',
+    });
+  }
+  next();
+};
+
 const talkValidation = (request, response, next) => {
   const { talk } = request.body;
   if (!talk) {
@@ -75,4 +90,5 @@ module.exports = {
   talkValidation,
   watchedAtValidation,
   rateValidation,
+  ratePatchValidation,
 };

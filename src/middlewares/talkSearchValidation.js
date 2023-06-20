@@ -26,8 +26,8 @@ const rateSearchValidation = async (request, response, next) => {
 };
 
 const dateSearchValidation = async (request, response, next) => {
-  const { date } = request.query;
-  if (date) {
+  if (request.query.date) {
+    const { date } = request.query;
     const regexData = /^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$/i;
     if (!regexData.test(date)) {
       return response.status(400).json({
